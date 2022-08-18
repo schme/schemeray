@@ -5,6 +5,9 @@
 
 (define pi 3.14159265359)
 
+(define (empty? collection)
+  (let ([cmp (if (vector? collection) vector-length length)])
+    (= 0 (cmp collection))))
 
 (define (float-to-u8 v)
   (let ([out (* (norm v) 255)])
@@ -24,6 +27,11 @@
     ((>= val edge1) edge1)
     (else val)))
 
+(define (list-add a b)
+  (map + a b))
+
+; SOME TYPES
+
 (define-record-type camera
   (fields position
           direction
@@ -31,8 +39,20 @@
           fov))
 
 
-(define (list-add a b)
-  (map + a b))
+(define-record-type hit-info
+  (fields hit?
+          t0
+          t1
+          point
+          normal
+          material))
+
+(define-record-type material
+  (fields roughness
+          metalness
+          color
+          ; draw might be null, use if not and pass self and hit-info
+          debug-draw))
 
 ; SCENE
 (define camera
@@ -41,14 +61,51 @@
                1.0
                40.0))
 
+(define (normal-draw material hit)
+  (if (hit-info-hit? hit)
+    (hit-info-normal hit)
+    (make-vec3 0. 0. 0.)))
+
+(define null-material
+  (make-material 
+    1.0 0. (make-vec3 0. 0. 0.) (list)))
+
+(define null-hit-info
+  (make-hit-info
+    #f (list) (list) (list) (list) (list)))
+
+(define temp-material 
+  (make-material
+    1.
+    0.
+    (make-vec3 0.2 0.6 0.2)
+    normal-draw))
+
 (define scene
   (list
-    (make-sphere (make-vec3 0. 0. -5.)
-               0.5)
-    (make-sphere (make-vec3 -1. 1. -6.)
-                 1.0)))
+    (make-sphere
+      (make-vec3 0.5 -0.5 -4.9)
+               0.5
+               temp-material)
+    (make-sphere
+      (make-vec3 -1. 0.5 -6.1)
+                 0.5
+                 temp-material)
+    (make-sphere
+      (make-vec3 -0.2 0. -5.5)
+                 0.5
+                 temp-material)))
 
 (define imagebuffer (make-image 768 432))
+
+
+(define (brdf-render material hit-info)
+  (make-vec3 1.0 0.0 1.0))
+
+(define (draw-material material hit-info)
+  (if (not (null? (material-debug-draw material)))
+    ((material-debug-draw material) material hit-info)
+    (brdf-render material hit-info)))
 
 ; DERIVE
 (define width (image-width imagebuffer))
@@ -56,26 +113,33 @@
 (define num-pixels (* width height))
 (define aspect-ratio (/ width height))
 
-
-(define (luminance-in ray-start ray-dir)
+(define (luminance-in ray-start ray-dir scene)
   (define (sphere-hit sphere)
     (let ([hit (sphere-intersect sphere (make-ray ray-start ray-dir))])
       (if (car hit)
         (let* ([hit-point (vec-muls (vec-add ray-start ray-dir) (cadr hit) )]
-               [hit-normal (vec-normalized (vec-sub hit-point (sphere-center scene)))])
-          (vector->list hit-normal))
-        (list 0.25 0.25 0.25))))
-  ())
+               [hit-normal (vec-normalized (vec-sub hit-point (sphere-center sphere)))])
+          (make-hit-info (car hit) (cadr hit) (caddr hit) hit-point hit-normal (sphere-material sphere)))
+        null-hit-info)))
+  (define (gather-hits scene)
+    (filter (lambda (h) (hit-info-hit? h)) (map sphere-hit scene)))
+  (let ([hits (list-sort (lambda (a b) (< (hit-info-t0 a) (hit-info-t0 b))) (gather-hits scene))])
+    (if (null? hits)
+      (make-vec3 0.1 0.1 0.1)
+      (draw-material (hit-info-material (car hits)) (car hits)))))
 
-
+ 
 (define (get-color x y)
   (let* ([fov-adjust (tan (* (camera-fov camera) 0.5 (/ pi 180.)))]
          [in-pixel-x (+ x 0.5)]
          [in-pixel-y (+ y 0.5)]
          [px (* (- (* 2.0 (/ in-pixel-x width )) 1.0 ) fov-adjust aspect-ratio)]
          [py (* (- 1.0 (* 2.0 (/ in-pixel-y height))) fov-adjust)]
-         [ray-dir (vec-normalized (vec-sub (make-vec3 px py (vec-z (camera-direction camera))) (camera-position camera)))])
-    (luminance-in (camera-position camera) ray-dir)))
+         [ray-dir (vec-normalized (vec-sub (make-vec3 px py (vec-z (camera-direction camera))) (camera-position camera)))]
+         [luminance (luminance-in (camera-position camera) ray-dir scene)])
+    (if (empty? luminance)
+      (list)
+      (vector->list luminance))))
 
 
 (define (render-to-buffer imagebuffer)

@@ -6,7 +6,8 @@
 
 (define-record-type sphere 
   (fields center
-          radius2))
+          radius2
+          material))
 
 (define (sphere-intersect sphere ray)
   (define (discriminant a b c)
