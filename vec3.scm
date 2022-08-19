@@ -3,57 +3,50 @@
 (define (lerp a b t)
   (+ (* a (- 1 t)) (* b t)))
 
+
 ; Construct
 
 (define (make-vec3 x y z)
-  (vector x y z))
+  (list x y z))
 
 (define (make-vec-from-points p1 p2)
-  (vector-map (lambda (a b) (- b a)) p1 p2))
+  (map (lambda (a b) (- b a)) p1 p2))
+
 
 ; Access
 
 (define (vec-x vec)
-  (vector-ref vec 0))
+  (car vec))
 
 (define (vec-y vec)
-  (vector-ref vec 1))
+  (cadr vec))
 
 (define (vec-z vec)
-  (vector-ref vec 2))
+  (caddr vec))
 
-; Modify
+(define (vec-w vec)
+  (cadddr vec))
 
-(define (vec-x-set! vec v)
-  (vector-set! vec 0 v))
-
-(define (vec-y-set! vec v)
-  (vector-set! vec 1 v))
-
-(define (vec-z-set! vec v)
-  (vector-set! vec 2 v))
 
 ; Operators
 
 (define (vec-divs vec-a val)
-  (vector-map (lambda (a) (/ a val)) vec-a))
+  (map (lambda (a) (/ a val)) vec-a))
 
 (define (vec-muls vec-a val)
-  (vector-map (lambda (a) (* a val)) vec-a))
+  (map (lambda (a) (* a val)) vec-a))
 
 (define (vec-add vec-a vec-b)
-  (vector-map (lambda (a b) (+ a b)) vec-a vec-b))
+  (map (lambda (a b) (+ a b)) vec-a vec-b))
 
 (define (vec-sub vec-a vec-b)
-  (vector-map (lambda (a b) (- a b)) vec-a vec-b))
+  (map (lambda (a b) (- a b)) vec-a vec-b))
 
 
 ; Derive
 
 (define (vec-length2 vec)
-  (let ([acc 0])
-    (vector-for-each (lambda (n) (set! acc (+ acc (expt n 2)))) vec)
-    acc))
+  (fold-left (lambda (acc a) (+ (* a a) acc)) 0 vec))
 
 (define (vec-length vec)
   (sqrt (vec-length2 vec)))
@@ -62,10 +55,7 @@
   (vec-divs vec (vec-length vec)))
 
 (define (vec-dot vec-a vec-b)
-  (let ([acc 0]
-        [multiplied (vector-map (lambda (a b) (* a b)) vec-a vec-b)])
-    (vector-for-each (lambda (n) (set! acc (+ acc n))) multiplied)
-    acc))
+  (fold-left + 0 (map (lambda (a b) (* a b)) vec-a vec-b)))
 
 (define (vec-dot-self vec)
   (vec-dot vec vec))
@@ -77,6 +67,6 @@
 
 
 ; TODO: check correctness
-(define (vec3-lerp vec-a vec-b t)
-  (vector-map (lambda (a b) (lerp a b t)) vec-a vec-b ))
+(define (vec-lerp vec-a vec-b t)
+  (map (lambda (a b) (lerp a b t)) vec-a vec-b ))
 

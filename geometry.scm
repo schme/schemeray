@@ -10,6 +10,10 @@
           material))
 
 (define (sphere-intersect sphere ray)
+  (define (discard-complex disc)
+    (if (not (real? disc))
+      (if (= 0.0 (imag-part disc)) (real-part disc) -inf.0)
+      disc))
   (define (discriminant a b c)
     (sqrt (- (* b b)
              (* 4.0 a c))))
@@ -17,8 +21,8 @@
          [a (vec-dot-self (ray-direction ray))]
          [b (* 2.0 (vec-dot (ray-direction ray) L))]
          [c (- (vec-dot L L) (sphere-radius2 sphere))]
-         [disc (discriminant a b c)]
-         [hit (and (real-valued? disc) (>= disc 0))])
+         [disc (discard-complex (discriminant a b c))]
+         [hit (>= disc 0)])
     (cond ((not hit) (list hit))
           ((= b 0) (list hit (* -0.5 (/ b a)) (* -0.5 (/ b a))))
           (else

@@ -5,10 +5,6 @@
 
 (define pi 3.14159265359)
 
-(define (empty? collection)
-  (let ([cmp (if (vector? collection) vector-length length)])
-    (= 0 (cmp collection))))
-
 (define (float-to-u8 v)
   (let ([out (* (norm v) 255)])
     (if (flonum? out)
@@ -61,7 +57,7 @@
                1.0
                40.0))
 
-(define (normal-draw material hit)
+(define (debug-draw-normal material hit)
   (if (hit-info-hit? hit)
     (hit-info-normal hit)
     (make-vec3 0. 0. 0.)))
@@ -79,25 +75,24 @@
     1.
     0.
     (make-vec3 0.2 0.6 0.2)
-    normal-draw))
+    debug-draw-normal))
 
 (define scene
   (list
     (make-sphere
       (make-vec3 0.5 -0.5 -4.9)
-               0.5
-               temp-material)
+      0.5
+      temp-material)
     (make-sphere
       (make-vec3 -1. 0.5 -6.1)
-                 0.5
-                 temp-material)
+      0.5
+      temp-material)
     (make-sphere
       (make-vec3 -0.2 0. -5.5)
-                 0.5
-                 temp-material)))
+      0.5
+      temp-material)))
 
 (define imagebuffer (make-image 768 432))
-
 
 (define (brdf-render material hit-info)
   (make-vec3 1.0 0.0 1.0))
@@ -117,7 +112,7 @@
   (define (sphere-hit sphere)
     (let ([hit (sphere-intersect sphere (make-ray ray-start ray-dir))])
       (if (car hit)
-        (let* ([hit-point (vec-muls (vec-add ray-start ray-dir) (cadr hit) )]
+        (let* ([hit-point (vec-muls (vec-add ray-start ray-dir) (cadr hit))]
                [hit-normal (vec-normalized (vec-sub hit-point (sphere-center sphere)))])
           (make-hit-info (car hit) (cadr hit) (caddr hit) hit-point hit-normal (sphere-material sphere)))
         null-hit-info)))
@@ -135,11 +130,9 @@
          [in-pixel-y (+ y 0.5)]
          [px (* (- (* 2.0 (/ in-pixel-x width )) 1.0 ) fov-adjust aspect-ratio)]
          [py (* (- 1.0 (* 2.0 (/ in-pixel-y height))) fov-adjust)]
-         [ray-dir (vec-normalized (vec-sub (make-vec3 px py (vec-z (camera-direction camera))) (camera-position camera)))]
-         [luminance (luminance-in (camera-position camera) ray-dir scene)])
-    (if (empty? luminance)
-      (list)
-      (vector->list luminance))))
+         [ray-dir (vec-normalized (vec-sub (make-vec3 px py (vec-z (camera-direction camera))) (camera-position camera)))])
+    (begin
+      (luminance-in (camera-position camera) ray-dir scene))))
 
 
 (define (render-to-buffer imagebuffer)
