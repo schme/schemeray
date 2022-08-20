@@ -6,31 +6,20 @@
 
 (define-record-type sphere 
   (fields center
-          radius2
+          radius
           material))
 
 (define (sphere-intersect sphere ray)
-  (define (discard-complex disc)
-    (if (not (real? disc))
-      (if (= 0.0 (imag-part disc)) (real-part disc) -inf.0)
-      disc))
-  (define (discriminant a b c)
-    (sqrt (- (* b b)
-             (* 4.0 a c))))
   (let* ([L (vec-sub (ray-origin ray) (sphere-center sphere))]
-         [a (vec-dot-self (ray-direction ray))]
-         [b (* 2.0 (vec-dot (ray-direction ray) L))]
-         [c (- (vec-dot L L) (sphere-radius2 sphere))]
-         [disc (discard-complex (discriminant a b c))]
-         [hit (>= disc 0)])
-    (cond ((not hit) (list hit))
-          ((= b 0) (list hit (* -0.5 (/ b a)) (* -0.5 (/ b a))))
-          (else
-            (let* ([q
-                   (cond ((< b 0) (* -0.5 (- b (sqrt disc))))
-                         ((> b 0) (* -0.5 (+ b (sqrt disc)))))]
-                  [t0 (/ q a)]
-                  [t1 (/ c q)])
-              (cond ((and (< t0 0) (< t1 0)) (list #f))
-                    ((< t0 0) (list hit t1 t1))
-                    (else (list hit t0 t1))))))))
+         [b (* (vec-dot L (ray-direction ray)))]
+         [c (- (vec-dot L L) (* (sphere-radius sphere) (sphere-radius sphere)))]
+         [disc (- (* b b) c)]
+         [hit (> disc 0)])
+    (if (not hit)
+      '()
+      (let* ([t0 (- (* -1 b) (sqrt disc))]
+             [distance (if (< t0 0) (+ (* -1 b) (sqrt disc)) t0)]
+             [get-normal (vec-normalized (vec-sub (vec-add (ray-origin ray) (vec-muls (ray-direction ray) distance)) (sphere-center sphere)))]
+             [normal (if (> 0 (vec-dot get-normal (ray-direction ray))) (vec-muls get-normal -1) get-normal)]
+             [hit-point (vec-add (ray-origin ray) (vec-muls (ray-direction ray) distance))])
+        (make-hit-info #t distance hit-point normal (sphere-material sphere))))))

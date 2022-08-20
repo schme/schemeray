@@ -9,6 +9,9 @@
 (define (make-vec3 x y z)
   (list x y z))
 
+(define (make-vec3-zero)
+  (list 0. 0. 0.))
+
 (define (make-vec-from-points p1 p2)
   (map (lambda (a b) (- b a)) p1 p2))
 
@@ -42,8 +45,14 @@
 (define (vec-sub vec-a vec-b)
   (map (lambda (a b) (- a b)) vec-a vec-b))
 
+(define (vec-mul vec-a vec-b)
+  (map (lambda (a b) (* a b)) vec-a vec-b))
 
-; Derive
+(define (vec-div vec-a vec-b)
+  (map (lambda (a b) (/ a b)) vec-a vec-b))
+
+
+; Operations
 
 (define (vec-length2 vec)
   (fold-left (lambda (acc a) (+ (* a a) acc)) 0 vec))
@@ -66,7 +75,13 @@
              (- (* (vec-x a) (vec-y b)) (* (vec-y a) (vec-x b)))))
 
 
+; Utility
+
 ; TODO: check correctness
 (define (vec-lerp vec-a vec-b t)
   (map (lambda (a b) (lerp a b t)) vec-a vec-b ))
 
+; TODO: check correctness
+; r = v - 2(v . n)n
+(define (vec-reflect vec normal)
+  (vec-sub vec (vec-muls normal (* 2 (vec-dot vec normal)))))
