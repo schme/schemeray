@@ -1,28 +1,12 @@
 ; TODO: Change place of list procedures
 
-; LIST UTILITIES
-
-(define (list-fill! lst object)
-  (if (not (null? lst))
-    (begin
-      (set-car! lst object)
-      (list-fill! (cdr lst) object))))
-
-(define (list-set! lst element object)
-  (if (= element 0)
-    (set-car! lst object)
-    (list-set! (cdr lst) (- element 1) object)))
-
-(define (list-get lst element)
-  (if (= element 0)
-    (car lst)
-    (list-get (cdr lst) (- element 1))))
+(load "utilities.scm")
 
 ; IMAGE
 
 (define (make-image width height)
   (if (= height 0)
-    (list)
+    '()
     (cons (make-list width (list)) (make-image width (- height 1)))))
 
 (define (image-fill! image color)
@@ -35,6 +19,12 @@
 
 (define (image-get image x y)
   (list-get (list-get image y) x))
+
+(define (image-get-x image nth-pixel)
+  (remainder nth-pixel (image-width image)))
+
+(define (image-get-y image nth-pixel)
+  (floor (/ nth-pixel (image-width image))))
 
 (define (image-width image)
   (if (not (null? image))

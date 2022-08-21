@@ -1,6 +1,8 @@
 (load "image.scm")
 (load "vec3.scm")
 (load "geometry.scm")
+(load "utilities.scm")
+(load "thread.scm")
 
 
 (define pi 3.14159265359)
@@ -24,9 +26,6 @@
     ((<= val edge0) edge0)
     ((>= val edge1) edge1)
     (else val)))
-
-(define (list-add a b)
-  (map + a b))
 
 ; SOME TYPES
 
@@ -132,14 +131,14 @@
 
 (define (uniform-sample-hemisphere normal)
   (let* ([u (random 1.0)]
-        [v (random 1.0)]
-        [theta (* 2.0 pi u)]
-        [phi (acos (- (* 2.0 v) 1.0))]
-        [dirx (* (cos theta) (sin phi))]
-        [diry (* (sin theta) (sin phi))]
-        [dirz (cos phi)]
-        [dir (vec-normalized (make-vec3 dirx diry dirz))]
-        [dirdotn (vec-dot dir normal)])
+         [v (random 1.0)]
+         [theta (* 2.0 pi u)]
+         [phi (acos (- (* 2.0 v) 1.0))]
+         [dirx (* (cos theta) (sin phi))]
+         [diry (* (sin theta) (sin phi))]
+         [dirz (cos phi)]
+         [dir (vec-normalized (make-vec3 dirx diry dirz))]
+         [dirdotn (vec-dot dir normal)])
     (if (<= 0. dirdotn)
       (vec-muls dir -1)
       dir)))
@@ -191,28 +190,32 @@
     (make-vec3-zero)
     (vec-add (vec-divs (get-color-sample x y) samples-per-pixel) (get-color x y (+ sample 1)))))
 
-(define (render-to-buffer imagebuffer)
-  (let ([width (image-width imagebuffer)] [height (image-height imagebuffer)])
-    (define (render-rows imagebuffer)
-      (define (render-row row y)
-        (define (render-pixel row x y)
-          (if (< x width)
-            (list-set! row 0 (float-list-to-u8 (get-color x y 0)))))
-        (if (not (null? row))
-          (begin
-            (render-pixel row (- width (length row)) y)
-            (render-row (cdr row) y))))
-      (if (not (null? imagebuffer))
-        (begin 
-          (render-row (car imagebuffer) (- height (image-height imagebuffer)))
-          (render-rows (cdr imagebuffer)))))
-    (render-rows imagebuffer)))
+(define current-pixel 0)
 
-(render-to-buffer imagebuffer)
+(define (render-to-buffer imagebuffer width height pixel)
+  (let ([y (image-get-y imagebuffer pixel)]
+        [x (image-get-x imagebuffer pixel)])
+    (image-set! imagebuffer x y (float-list-to-u8 (get-color x y 0)))))
+
+(define (render-thread)
+  (let ([width (image-width imagebuffer)]
+        [height (image-height imagebuffer)]
+        [pixels (* width height)])
+    (if (< current-pixel pixels)
+      (begin
+        (set! current-pixel (+ current-pixel 1))
+        (render-to-buffer imagebuffer width height current-pixel)
+        (render-thread)))))
+
+(time
+  (let ([threads (start-threads render-thread 6)])
+    (wait-threads threads)))
+
+;(time (render-thread))
 
 (let ([filename "render.ppm"])
-    (display "File: ")
-    (display filename)
-    (write-ppm imagebuffer filename)
-    (display ". Done.")
-    (newline))
+  (display "\nFile: ")
+  (display filename)
+  (write-ppm imagebuffer filename)
+  (display ". Done.")
+  (newline))
