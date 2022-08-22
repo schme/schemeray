@@ -11,7 +11,7 @@
 (define (make-image width height)
   (if (= height 0)
     '()
-    (cons (make-list width (list)) (make-image width (- height 1)))))
+    (cons (make-list width '()) (make-image width (- height 1)))))
 
 (define (image-fill! image color)
   (if (not (null? image))

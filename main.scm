@@ -2,5 +2,4 @@
 
 (import (raytracer))
 
-(run-trace)
-(write-buffer "render.ppm")
+(trace-and-write "render.ppm")

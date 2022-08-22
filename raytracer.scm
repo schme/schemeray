@@ -1,5 +1,6 @@
-(library (raytracer)
-         (export run-trace write-buffer)
+;(library (raytracer)
+         ;(export run-trace write-buffer trace-and-write)
+
          (import (chezscheme)
                  (threads)
                  (vec3)
@@ -84,16 +85,16 @@
       temp-material)
     (make-sphere
       (make-vec3 0. 0. -50)
-      40
+      41
       (make-material 0. 0. (make-vec3 1.0 0.0 0.0) (make-vec3-zero)))
     (make-sphere
       (make-vec3 50. 0. -10)
-      47
-      (make-material 0. 0. (make-vec3 0.0 0.0 1.0) (make-vec3-zero)))
+      48
+      (make-material 0. 0. (make-vec3 0.0 1.0 1.0) (make-vec3-zero)))
     (make-sphere
       (make-vec3 -50. 0. -10)
-      47
-      (make-material 0. 0. (make-vec3 0.0 0.0 1.0) (make-vec3-zero)))
+      48
+      (make-material 0. 0. (make-vec3 1.0 0.0 1.0) (make-vec3-zero)))
     (make-sphere
       (make-vec3 0. -50. -10)
       48
@@ -105,12 +106,14 @@
 
 (define samples-per-pixel 1000)
 (define maximum-depth 5)
-(define ambient-color (make-vec3 0.5 0.5 0.5))
+(define ambient-color (make-vec3 0.3 0.3 0.3))
 
 (define debug-function '())
 
 ;(define imagebuffer (make-image 768 432))
-(define imagebuffer (make-image 64 64))
+;(define imagebuffer (make-image 256 256))
+;(define imagebuffer (make-image 64 64))
+(define imagebuffer (make-image 32 32))
 
 ; DERIVE
 (define width (image-width imagebuffer))
@@ -138,12 +141,10 @@
     (map (lambda (s) (sphere-intersect s (make-ray ray-start ray-dir))) scene)))
 
 (define (luminance-out hit ray-dir depth)
-  (if (= 0 depth)
-    (make-vec3-zero)
     (let* ([new-ray-dir (uniform-sample-hemisphere (hit-info-normal hit))]
            [material (hit-info-material hit)]
            [hits (gather-hits (vec3-add (hit-info-point hit) (vec3-muls new-ray-dir hit-epsilon)) new-ray-dir scene)])
-      (if (null? hits)
+      (if (or (= 0 depth) (null? hits))
         (vec3-add
           (material-emissive (hit-info-material hit))
           (vec3-muls
@@ -155,7 +156,7 @@
             (vec3-muls
               (material-diffuse material)
               (* 2.0 (vec3-dot new-ray-dir (hit-info-normal hit))))
-            (luminance-out (car hits) (vec3-muls new-ray-dir -1) (- depth 1))))))))
+            (luminance-out (car hits) (vec3-muls new-ray-dir -1) (- depth 1)))))))
 
 (define (luminance-in ray-start ray-dir scene)
   (let ([hits (list-sort (lambda (a b) (< (hit-info-t0 a) (hit-info-t0 b))) (gather-hits ray-start ray-dir scene))])
@@ -191,10 +192,11 @@
         [height (image-height imagebuffer)]
         [pixels (* width height)])
     (if (< current-pixel pixels)
-      (begin
+      (let ([pxl current-pixel])
+       (begin
         (set! current-pixel (+ current-pixel 1))
-        (render-to-buffer imagebuffer width height current-pixel)
-        (render-thread)))))
+        (render-to-buffer imagebuffer width height pxl)
+        (render-thread))))))
 
 (define (run-trace)
   ; So I don't have to remember to set these
@@ -210,7 +212,14 @@
   (display "\nFile: ")
   (display filename)
   (write-ppm imagebuffer filename)
+  (set! current-pixel 0)
   (display ". Done.")
-  (newline)))
+  (newline))
+
+(define (trace-and-write filename)
+  (run-trace)
+  (write-buffer filename))
+
+;)
 
 
