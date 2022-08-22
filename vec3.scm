@@ -5,7 +5,7 @@
                  vec-x vec-y vec-z vec-w
                  vec-divs vec-muls
                  vec-add vec-sub vec-mul vec-div
-                 vec-length2 vec-length vec-normalized vec-dot vec-dot-self vec3-cross
+                 vec-length2 vec-length vec-normalized vec-dot vec3-dot vec-dot-self vec3-cross
                  vec-lerp vec-reflect)
          (import (rnrs))
 
@@ -74,6 +74,18 @@
 
 (define (vec-dot vec-a vec-b)
   (fold-left + 0 (map (lambda (a b) (* a b)) vec-a vec-b)))
+
+; unroll for efficiency
+(define (vec3-dot vec-a vec-b)
+  (let ([ax (car vec-a)]
+        [ay (cadr vec-a)]
+        [az (caddr vec-a)]
+        [bx (car vec-b)]
+        [by (cadr vec-b)]
+        [bz (caddr vec-b)])
+    (+ (* ax bx)
+       (* ay by)
+       (* az bz))))
 
 (define (vec-dot-self vec)
   (vec-dot vec vec))

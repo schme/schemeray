@@ -127,7 +127,7 @@
          [diry (* (sin theta) (sin phi))]
          [dirz (cos phi)]
          [dir (vec-normalized (make-vec3 dirx diry dirz))]
-         [dirdotn (vec-dot dir normal)])
+         [dirdotn (vec3-dot dir normal)])
     (if (<= 0. dirdotn)
       (vec-muls dir -1)
       dir)))
@@ -148,13 +148,13 @@
           (material-emissive (hit-info-material hit))
           (vec-muls
             (vec-mul ambient-color (material-diffuse material))
-            (* 2.0 (vec-dot new-ray-dir (hit-info-normal hit)))))
+            (* 2.0 (vec3-dot new-ray-dir (hit-info-normal hit)))))
         (vec-add
           (material-emissive (hit-info-material hit))
           (vec-mul
             (vec-muls
               (material-diffuse material)
-              (* 2.0 (vec-dot new-ray-dir (hit-info-normal hit))))
+              (* 2.0 (vec3-dot new-ray-dir (hit-info-normal hit))))
             (luminance-out (car hits) (vec-muls new-ray-dir -1) (- depth 1))))))))
 
 (define (luminance-in ray-start ray-dir scene)

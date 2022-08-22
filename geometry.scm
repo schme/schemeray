@@ -24,8 +24,8 @@
 
  (define (sphere-intersect sphere ray)
    (let* ([L (vec-sub (ray-origin ray) (sphere-center sphere))]
-          [b (* (vec-dot L (ray-direction ray)))]
-          [c (- (vec-dot L L) (* (sphere-radius sphere) (sphere-radius sphere)))]
+          [b (* (vec3-dot L (ray-direction ray)))]
+          [c (- (vec3-dot L L) (* (sphere-radius sphere) (sphere-radius sphere)))]
           [disc (- (* b b) c)]
           [hit (> disc 0)])
      (if (not hit)
@@ -37,7 +37,7 @@
                   (vec-sub (vec-add (ray-origin ray) (vec-muls (ray-direction ray) distance))
                            (sphere-center sphere)))]
               [normal
-                (if (> 0(vec-dot get-normal (ray-direction ray)))
+                (if (> 0(vec3-dot get-normal (ray-direction ray)))
                   (vec-muls get-normal -1)
                   get-normal)]
               [hit-point (vec-add (ray-origin ray) (vec-muls (ray-direction ray) distance))])
