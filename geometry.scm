@@ -23,7 +23,7 @@
            material))
 
  (define (sphere-intersect sphere ray)
-   (let* ([L (vec-sub (ray-origin ray) (sphere-center sphere))]
+   (let* ([L (vec3-sub (ray-origin ray) (sphere-center sphere))]
           [b (* (vec3-dot L (ray-direction ray)))]
           [c (- (vec3-dot L L) (* (sphere-radius sphere) (sphere-radius sphere)))]
           [disc (- (* b b) c)]
@@ -33,12 +33,12 @@
        (let* ([t0 (- (* -1 b) (sqrt disc))]
               [distance (if (< t0 0) (+ (* -1 b) (sqrt disc)) t0)]
               [get-normal
-                (vec-normalized
-                  (vec-sub (vec-add (ray-origin ray) (vec-muls (ray-direction ray) distance))
+                (vec3-normalized
+                  (vec3-sub (vec3-add (ray-origin ray) (vec3-muls (ray-direction ray) distance))
                            (sphere-center sphere)))]
               [normal
                 (if (> 0(vec3-dot get-normal (ray-direction ray)))
-                  (vec-muls get-normal -1)
+                  (vec3-muls get-normal -1)
                   get-normal)]
-              [hit-point (vec-add (ray-origin ray) (vec-muls (ray-direction ray) distance))])
+              [hit-point (vec3-add (ray-origin ray) (vec3-muls (ray-direction ray) distance))])
          (make-hit-info #t distance hit-point normal (sphere-material sphere)))))))

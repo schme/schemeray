@@ -57,8 +57,8 @@
 ; Tune constants to the scene
 (define (debug-draw-distance material hit)
   (let ([out-color
-          (vec-sub (make-vec3 1. 1. 1)
-                   (vec-muls (make-vec3 1. 1. 1.) (* 0.1 (hit-info-t0 hit))))])
+          (vec3-sub (make-vec3 1. 1. 1)
+                   (vec3-muls (make-vec3 1. 1. 1.) (* 0.1 (hit-info-t0 hit))))])
     out-color))
 
 (define temp-material
@@ -126,10 +126,10 @@
          [dirx (* (cos theta) (sin phi))]
          [diry (* (sin theta) (sin phi))]
          [dirz (cos phi)]
-         [dir (vec-normalized (make-vec3 dirx diry dirz))]
+         [dir (vec3-normalized (make-vec3 dirx diry dirz))]
          [dirdotn (vec3-dot dir normal)])
     (if (<= 0. dirdotn)
-      (vec-muls dir -1)
+      (vec3-muls dir -1)
       dir)))
 
 (define (gather-hits ray-start ray-dir scene)
@@ -142,20 +142,20 @@
     (make-vec3-zero)
     (let* ([new-ray-dir (uniform-sample-hemisphere (hit-info-normal hit))]
            [material (hit-info-material hit)]
-           [hits (gather-hits (vec-add (hit-info-point hit) (vec-muls new-ray-dir hit-epsilon)) new-ray-dir scene)])
+           [hits (gather-hits (vec3-add (hit-info-point hit) (vec3-muls new-ray-dir hit-epsilon)) new-ray-dir scene)])
       (if (null? hits)
-        (vec-add
+        (vec3-add
           (material-emissive (hit-info-material hit))
-          (vec-muls
-            (vec-mul ambient-color (material-diffuse material))
+          (vec3-muls
+            (vec3-mul ambient-color (material-diffuse material))
             (* 2.0 (vec3-dot new-ray-dir (hit-info-normal hit)))))
-        (vec-add
+        (vec3-add
           (material-emissive (hit-info-material hit))
-          (vec-mul
-            (vec-muls
+          (vec3-mul
+            (vec3-muls
               (material-diffuse material)
               (* 2.0 (vec3-dot new-ray-dir (hit-info-normal hit))))
-            (luminance-out (car hits) (vec-muls new-ray-dir -1) (- depth 1))))))))
+            (luminance-out (car hits) (vec3-muls new-ray-dir -1) (- depth 1))))))))
 
 (define (luminance-in ray-start ray-dir scene)
   (let ([hits (list-sort (lambda (a b) (< (hit-info-t0 a) (hit-info-t0 b))) (gather-hits ray-start ray-dir scene))])
@@ -173,11 +173,11 @@
            [in-pixel-y (+ y 0.5)]
            [px (* (- (* 2.0 (/ in-pixel-x width )) 1.0 ) fov-adjust aspect-ratio)]
            [py (* (- 1.0 (* 2.0 (/ in-pixel-y height))) fov-adjust)]
-           [ray-dir (vec-normalized (vec-sub (make-vec3 px py (vec-z (camera-direction scene-camera))) (camera-position scene-camera)))])
+           [ray-dir (vec3-normalized (vec3-sub (make-vec3 px py (vec-z (camera-direction scene-camera))) (camera-position scene-camera)))])
       (luminance-in (camera-position scene-camera) ray-dir scene)))
   (if (= samples-per-pixel sample)
     (make-vec3-zero)
-    (vec-add (vec-divs (get-color-sample x y) samples-per-pixel) (get-color x y (+ sample 1)))))
+    (vec3-add (vec3-divs (get-color-sample x y) samples-per-pixel) (get-color x y (+ sample 1)))))
 
 (define current-pixel 0)
 
