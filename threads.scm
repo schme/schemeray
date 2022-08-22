@@ -1,5 +1,9 @@
 ; Thread Utilities
 
+(library (threads)
+         (export kthread start-thread start-threads wait-thread wait-threads)
+         (import (chezscheme))
+
 (define-record-type kthread
   (fields thread
           (mutable mutex)
@@ -30,4 +34,4 @@
   (if (not (null? lst))
     (let ([next (car lst)])
       (wait-thread next)
-      (wait-threads (cdr lst)))))
+      (wait-threads (cdr lst))))))

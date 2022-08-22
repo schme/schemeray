@@ -1,6 +1,10 @@
 ; TODO: Change place of list procedures
-
-(load "utilities.scm")
+(library (image)
+         (export make-image image-fill! image-set! image-get image-get-x image-get-y
+                 image-width image-height image-fill-rect!
+                 write-ppm)
+         (import (chezscheme)
+                 (utilities))
 
 ; IMAGE
 
@@ -68,5 +72,4 @@
                       (let ([header-string (string-append "P6 " (number->string width) " " (number->string height) " " (number->string 255) "\n")])
                         (put-bytevector port (string->bytevector header-string (make-transcoder (latin-1-codec))))
                         (write-image image port)
-                        (close-port port))))))
-
+                        (close-port port)))))))

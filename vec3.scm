@@ -1,5 +1,14 @@
 ; vec3
 
+(library (vec3)
+         (export make-vec3 make-vec3-zero make-vec-from-points
+                 vec-x vec-y vec-z vec-w
+                 vec-divs vec-muls
+                 vec-add vec-sub vec-mul vec-div
+                 vec-length2 vec-length vec-normalized vec-dot vec-dot-self vec3-cross
+                 vec-lerp vec-reflect)
+         (import (rnrs))
+
 (define (lerp a b t)
   (+ (* a (- 1 t)) (* b t)))
 
@@ -74,7 +83,6 @@
              (- (* (vec-z a) (vec-x b)) (* (vec-x a) (vec-z b)))
              (- (* (vec-x a) (vec-y b)) (* (vec-y a) (vec-x b)))))
 
-
 ; Utility
 
 ; TODO: check correctness
@@ -84,4 +92,4 @@
 ; TODO: check correctness
 ; r = v - 2(v . n)n
 (define (vec-reflect vec normal)
-  (vec-sub vec (vec-muls normal (* 2 (vec-dot vec normal)))))
+  (vec-sub vec (vec-muls normal (* 2 (vec-dot vec normal))))))

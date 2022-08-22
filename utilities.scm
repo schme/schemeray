@@ -1,4 +1,6 @@
-; LIST UTILITIES
+(library (utilities)
+         (export list-fill! list-set! list-get)
+         (import (chezscheme))
 
 (define (list-fill! lst object)
   (if (not (null? lst))
@@ -17,5 +19,5 @@
     '()
     (if (= element 0)
       (car lst)
-      (list-get (cdr lst) (- element 1)))))
+      (list-get (cdr lst) (- element 1))))))
 

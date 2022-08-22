@@ -1,2 +1,9 @@
 # Ignore rendered images
 *.ppm
+
+# compilation results
+*.so
+*.wpo
+
+# exe
+tracer
