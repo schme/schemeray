@@ -220,6 +220,11 @@
   (run-trace)
   (write-buffer filename))
 
+(define (trace-and-write-with-upscale filename)
+  (let ([file (format "~s.ppm" filename)])
+    (trace-and-write file)
+    (system (format "convert -scale 1000% ~s.ppm ~s_large.ppm" filename filename))))
+
 ;)
 
 
