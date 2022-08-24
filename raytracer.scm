@@ -48,11 +48,11 @@
   (make-camera (make-vec3 0. 0. 0.)
                (make-vec3 0. 0. -1.)
                1.0
-               40.0))
+               45))
 
 (define (debug-draw-normal material hit)
   (if (not (null? hit))
-    (hit-info-normal hit)
+    (vec3-muls (vec3-add (hit-info-normal hit) (make-vec3 1. 1. 1)) 0.5)
     (make-vec3 0. 0. 0.)))
 
 ; Tune constants to the scene
@@ -89,11 +89,11 @@
       (make-material 0. 0. (make-vec3 1.0 0.0 0.0) (make-vec3-zero)))
     (make-sphere
       (make-vec3 50. 0. -10)
-      48
+      47
       (make-material 0. 0. (make-vec3 0.0 1.0 1.0) (make-vec3-zero)))
     (make-sphere
       (make-vec3 -50. 0. -10)
-      48
+      47
       (make-material 0. 0. (make-vec3 1.0 0.0 1.0) (make-vec3-zero)))
     (make-sphere
       (make-vec3 0. -50. -10)
@@ -102,18 +102,18 @@
     (make-sphere
       (make-vec3 0. 12.0 -5.)
       10
-      (make-material 0. 0. (make-vec3-zero) (make-vec3 1. 1. 1.)))))
+      (make-material 0. 0. (make-vec3-zero) (make-vec3 1.0 1.0 1.0)))))
 
 (define samples-per-pixel 1000)
 (define maximum-depth 5)
-(define ambient-color (make-vec3 0.3 0.3 0.3))
+(define ambient-color (make-vec3 0.5 0.5 0.5))
 
 (define debug-function '())
 
 ;(define imagebuffer (make-image 768 432))
 ;(define imagebuffer (make-image 256 256))
-;(define imagebuffer (make-image 64 64))
-(define imagebuffer (make-image 32 32))
+(define imagebuffer (make-image 64 64))
+;(define imagebuffer (make-image 32 32))
 
 ; DERIVE
 (define width (image-width imagebuffer))

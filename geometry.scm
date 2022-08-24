@@ -37,8 +37,10 @@
                   (vec3-sub (vec3-add (ray-origin ray) (vec3-muls (ray-direction ray) distance))
                            (sphere-center sphere)))]
               [normal
-                (if (> 0(vec3-dot get-normal (ray-direction ray)))
+                (if (< 0 (vec3-dot get-normal (ray-direction ray)))
                   (vec3-muls get-normal -1)
                   get-normal)]
               [hit-point (vec3-add (ray-origin ray) (vec3-muls (ray-direction ray) distance))])
-         (make-hit-info #t distance hit-point normal (sphere-material sphere)))))))
+         (if (< t0 0)
+           '()
+           (make-hit-info #t distance hit-point normal (sphere-material sphere))))))))
