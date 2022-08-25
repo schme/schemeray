@@ -1,6 +1,5 @@
 ;(library (raytracer)
          ;(export run-trace write-buffer trace-and-write)
-
          (import (chezscheme)
                  (threads)
                  (vec3)
@@ -52,6 +51,11 @@
 
 (define (debug-draw-normal material hit)
   (if (not (null? hit))
+    (hit-info-normal hit)
+    (make-vec3 0. 0. 0.)))
+
+(define (debug-draw-normal-false material hit)
+  (if (not (null? hit))
     (vec3-muls (vec3-add (hit-info-normal hit) (make-vec3 1. 1. 1)) 0.5)
     (make-vec3 0. 0. 0.)))
 
@@ -85,28 +89,28 @@
       temp-material)
     (make-sphere
       (make-vec3 0. 0. -50)
-      41
+      40.5
       (make-material 0. 0. (make-vec3 1.0 0.0 0.0) (make-vec3-zero)))
     (make-sphere
       (make-vec3 50. 0. -10)
       47
-      (make-material 0. 0. (make-vec3 0.0 1.0 1.0) (make-vec3-zero)))
+      (make-material 0. 0. (make-vec3 1.0 0.0 1.0) (make-vec3-zero)))
     (make-sphere
       (make-vec3 -50. 0. -10)
       47
-      (make-material 0. 0. (make-vec3 1.0 0.0 1.0) (make-vec3-zero)))
+      (make-material 0. 0. (make-vec3 0.0 1.0 1.0) (make-vec3-zero)))
     (make-sphere
       (make-vec3 0. -50. -10)
       48
       (make-material 0. 0. (make-vec3 0.0 1.0 0.0) (make-vec3-zero)))
     (make-sphere
-      (make-vec3 0. 12.0 -5.)
-      10
+      (make-vec3 0. 50.0 -8.)
+      47
       (make-material 0. 0. (make-vec3-zero) (make-vec3 1.0 1.0 1.0)))))
 
-(define samples-per-pixel 1000)
+(define samples-per-pixel 1024)
 (define maximum-depth 5)
-(define ambient-color (make-vec3 0.5 0.5 0.5))
+(define ambient-color (make-vec3 0.0 0.0 0.0))
 
 (define debug-function '())
 
@@ -131,61 +135,75 @@
          [dirz (cos phi)]
          [dir (vec3-normalized (make-vec3 dirx diry dirz))]
          [dirdotn (vec3-dot dir normal)])
-    (if (<= 0. dirdotn)
+    (if (> 0. dirdotn)
       (vec3-muls dir -1)
       dir)))
 
 (define (gather-hits ray-start ray-dir scene)
-  (filter
-    (lambda (h) (and (not (null? h)) (hit-info-hit? h)))
-    (map (lambda (s) (sphere-intersect s (make-ray ray-start ray-dir))) scene)))
+  (let ([all-hits
+          (map (lambda (s) (sphere-intersect s (make-ray ray-start ray-dir))) scene)])
+    (list-sort (lambda (a b) (< (hit-info-t0 a) (hit-info-t0 b)))
+               (filter (lambda (h) (not (null? h))) all-hits))))
 
-(define (luminance-out hit ray-dir depth)
-    (let* ([new-ray-dir (uniform-sample-hemisphere (hit-info-normal hit))]
-           [material (hit-info-material hit)]
-           [hits (gather-hits (vec3-add (hit-info-point hit) (vec3-muls new-ray-dir hit-epsilon)) new-ray-dir scene)])
-      (if (or (= 0 depth) (null? hits))
-        (vec3-add
-          (material-emissive (hit-info-material hit))
-          (vec3-muls
-            (vec3-mul ambient-color (material-diffuse material))
-            (* 2.0 (vec3-dot new-ray-dir (hit-info-normal hit)))))
-        (vec3-add
-          (material-emissive (hit-info-material hit))
-          (vec3-mul
-            (vec3-muls
-              (material-diffuse material)
-              (* 2.0 (vec3-dot new-ray-dir (hit-info-normal hit))))
-            (luminance-out (car hits) (vec3-muls new-ray-dir -1) (- depth 1)))))))
+(define (radiance-out hit ray-dir depth)
+  (let* ([new-ray-dir (uniform-sample-hemisphere (hit-info-normal hit))]
+         [material (hit-info-material hit)]
+         [new-hits (gather-hits
+                     (vec3-add
+                       (hit-info-point hit)
+                       (vec3-muls new-ray-dir hit-epsilon)) new-ray-dir scene)]
+         [new-dir-dot-n-2 (* 2.0 (vec3-dot new-ray-dir (hit-info-normal hit)))]
+         [L0 (material-emissive material)])
+    (if (or (= 0 depth) (null? new-hits))
+      (vec3-add
+        L0
+        (vec3-muls
+          (vec3-mul ambient-color (material-diffuse material))
+          new-dir-dot-n-2))
+      (vec3-add
+        L0
+        (vec3-mul
+          (vec3-muls (material-diffuse material) new-dir-dot-n-2)
+          (radiance-out (car new-hits) new-ray-dir (- depth 1)))))))
 
-(define (luminance-in ray-start ray-dir scene)
-  (let ([hits (list-sort (lambda (a b) (< (hit-info-t0 a) (hit-info-t0 b))) (gather-hits ray-start ray-dir scene))])
-    (if (and (not (null? hits)) (not (null? debug-function)))
-      (debug-function (hit-info-material (car hits)) (car hits))
-      (if (null? hits)
+(define (radiance-in ray-start ray-dir scene)
+  (let ([hits (gather-hits ray-start ray-dir scene)])
+     (if (null? hits)
         (make-vec3-zero)
-        (luminance-out (car hits) ray-dir maximum-depth)))))
+        (radiance-out (car hits) ray-dir maximum-depth))))
 
+(define (get-debug-color-at-direction ray-start ray-dir scene)
+   (let ([hits (gather-hits ray-start ray-dir scene)])
+     (if (not (null? hits))
+      (debug-function (hit-info-material (car hits)) (car hits)))))
 
-(define (get-color x y sample)
-  (define (get-color-sample x y)
-    (let* ([fov-adjust (tan (* (camera-fov scene-camera) 0.5 (/ pi 180.)))]
-           [in-pixel-x (+ x 0.5)]
-           [in-pixel-y (+ y 0.5)]
-           [px (* (- (* 2.0 (/ in-pixel-x width )) 1.0 ) fov-adjust aspect-ratio)]
-           [py (* (- 1.0 (* 2.0 (/ in-pixel-y height))) fov-adjust)]
-           [ray-dir (vec3-normalized (vec3-sub (make-vec3 px py (vec-z (camera-direction scene-camera))) (camera-position scene-camera)))])
-      (luminance-in (camera-position scene-camera) ray-dir scene)))
-  (if (= samples-per-pixel sample)
-    (make-vec3-zero)
-    (vec3-add (vec3-divs (get-color-sample x y) samples-per-pixel) (get-color x y (+ sample 1)))))
+(define (get-color x y samples)
+  (define (get-color-at-direction ray-start ray-dir scene)
+    (let loop ([i 0] 
+               [color (make-vec3-zero)])
+      (if (> i samples) (vec3-divs color samples)
+        (loop (+ i 1)
+              (vec3-add
+                  color
+                  (radiance-in ray-start ray-dir scene))))))
+  (let* ([render-func (if (null? debug-function) get-color-at-direction get-debug-color-at-direction)]
+         [fov-adjust (tan (* (camera-fov scene-camera) 0.5 (/ pi 180.)))]
+         [in-pixel-x (+ x 0.5)]
+         [in-pixel-y (+ y 0.5)]
+         [px (* (- (* 2.0 (/ in-pixel-x width )) 1.0 ) fov-adjust aspect-ratio)]
+         [py (* (- 1.0 (* 2.0 (/ in-pixel-y height))) fov-adjust)]
+         [ray-dir (vec3-normalized
+                    (vec3-sub
+                      (make-vec3 px py (vec-z (camera-direction scene-camera)))
+                      (camera-position scene-camera)))])
+    (render-func (camera-position scene-camera) ray-dir scene)))
 
 (define current-pixel 0)
 
 (define (render-to-buffer imagebuffer width height pixel)
   (let ([y (image-get-y imagebuffer pixel)]
         [x (image-get-x imagebuffer pixel)])
-    (image-set! imagebuffer x y (float-list-to-u8 (get-color x y 0)))))
+    (image-set! imagebuffer x y (float-list-to-u8 (get-color x y samples-per-pixel)))))
 
 (define (render-thread)
   (let ([width (image-width imagebuffer)]
@@ -199,7 +217,7 @@
         (render-thread))))))
 
 (define (run-trace)
-  ; So I don't have to remember to set these
+  (random-seed 1337)
   (if (not (null? debug-function))
     (begin
       (set! samples-per-pixel 1)
