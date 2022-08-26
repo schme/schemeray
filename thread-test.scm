@@ -1,7 +1,6 @@
-(import (threads))
-
-(load "utilities.scm")
-(load "image.scm")
+(import (threads)
+        (utilities)
+        (image))
 
 (define imagebuffer (make-image 8 5))
 (define current-pixel 0)

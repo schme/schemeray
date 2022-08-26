@@ -42,12 +42,7 @@
           diffuse
           emissive))
 
-; SCENE
-(define scene-camera
-  (make-camera (make-vec3 0. 0. 0.)
-               (make-vec3 0. 0. -1.)
-               1.0
-               45))
+; Debug
 
 (define (debug-draw-normal material hit)
   (if (not (null? hit))
@@ -66,27 +61,21 @@
                    (vec3-muls (make-vec3 1. 1. 1.) (* 0.1 (hit-info-t0 hit))))])
     out-color))
 
-(define temp-material
-  (make-material
-    1.
-    0.
-    (make-vec3 1.0 1.0 1.0)
-    (make-vec3 0. 0. 0.)))
-
-(define scene
+; SCENE
+(define scene-cornellish-balls
   (list
     (make-sphere
       (make-vec3 -1.8 0.0 -8.0)
       1.0
-      temp-material)
+      (make-material 1. 0. (make-vec3 1. 1. 1.) (make-vec3-zero)))
     (make-sphere
       (make-vec3 0. -1.0 -8.0)
       1.0
-      temp-material)
+      (make-material 1. 0. (make-vec3 1. 1. 1.) (make-vec3-zero)))
     (make-sphere
       (make-vec3 1.8 0.0 -8.0)
       1.0
-      temp-material)
+      (make-material 1. 0. (make-vec3 1. 1. 1.) (make-vec3-zero)))
     (make-sphere
       (make-vec3 0. 0. -50)
       40.5
@@ -108,21 +97,32 @@
       47
       (make-material 0. 0. (make-vec3-zero) (make-vec3 1.0 1.0 1.0)))))
 
-(define samples-per-pixel 1024)
+(define scene-cornellish-balls-camera
+  (make-camera (make-vec3 0. 0. 0.)
+               (make-vec3 0. 0. -1.)
+               1.0
+               45))
+
+(define scene scene-cornellish-balls)
+(define scene-camera scene-cornellish-balls-camera)
+
+(define samples-per-pixel (* 1024 1))
 (define maximum-depth 5)
 (define ambient-color (make-vec3 0.0 0.0 0.0))
 
 (define debug-function '())
 
+
 ;(define imagebuffer (make-image 768 432))
 ;(define imagebuffer (make-image 256 256))
+;(define imagebuffer (make-image 128 128))
 (define imagebuffer (make-image 64 64))
 ;(define imagebuffer (make-image 32 32))
 
-; DERIVE
+
+; DERIVED
 (define width (image-width imagebuffer))
 (define height (image-height imagebuffer))
-(define num-pixels (* width height))
 (define aspect-ratio (/ width height))
 
 (define (uniform-sample-hemisphere normal)
@@ -179,7 +179,7 @@
 
 (define (get-color x y samples)
   (define (get-color-at-direction ray-start ray-dir scene)
-    (let loop ([i 0] 
+    (let loop ([i 0]
                [color (make-vec3-zero)])
       (if (> i samples) (vec3-divs color samples)
         (loop (+ i 1)
@@ -198,13 +198,13 @@
                       (camera-position scene-camera)))])
     (render-func (camera-position scene-camera) ray-dir scene)))
 
-(define current-pixel 0)
 
 (define (render-to-buffer imagebuffer width height pixel)
   (let ([y (image-get-y imagebuffer pixel)]
         [x (image-get-x imagebuffer pixel)])
     (image-set! imagebuffer x y (float-list-to-u8 (get-color x y samples-per-pixel)))))
 
+(define current-pixel 0)
 (define (render-thread)
   (let ([width (image-width imagebuffer)]
         [height (image-height imagebuffer)]
@@ -223,7 +223,7 @@
       (set! samples-per-pixel 1)
       (set! maximum-depth 1)))
   (time
-    (let ([threads (start-threads render-thread 6)])
+    (let ([threads (start-threads render-thread 8)])
       (wait-threads threads))))
 
 (define (write-buffer filename)
