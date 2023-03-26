@@ -2,6 +2,7 @@ Requires ChezScheme (only one tested) with threads enabled
 
 ```bash
 git clone git@github.com:cisco/ChezScheme.git 
+cd ChezScheme
 ./configure --threads
 sudo make install
 ```
