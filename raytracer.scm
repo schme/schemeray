@@ -1,5 +1,5 @@
-;(library (raytracer)
-         ;(export run-trace write-buffer trace-and-write)
+(library (raytracer)
+         (export run-trace write-buffer trace-and-write)
          (import (chezscheme)
                  (threads)
                  (vec3)
@@ -243,6 +243,6 @@
     (trace-and-write file)
     (system (format "convert -scale 1000% ~s.ppm ~s_large.ppm" filename filename))))
 
-;)
+)
 
 
